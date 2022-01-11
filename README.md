@@ -2,7 +2,7 @@
  
  ### About
  
- Este código foi usado como o desafio da Seazone. São realizadas algumas análises sobre duas bases de dados sobre ocupações do Airbnb.
+ Este código foi usado como o desafio da [Seazone](https://seazone.com.br/). São realizadas algumas análises sobre duas bases de dados sobre ocupações do Airbnb.
  
  ---
  
