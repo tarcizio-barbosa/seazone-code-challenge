@@ -1,0 +1,182 @@
+---
+title: "Seazone Code Challenge"
+author: "Tarcizio Barbosa"
+date: "11/01/2022"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Load Packages
+
+
+```{r}
+library(tidyverse)
+library(corrplot)
+
+```
+
+### Load Databases
+
+
+```{r}
+price_data <- read.csv("desafio_priceav.csv", encoding = "UTF-8")
+details_data <- read.csv("desafio_details.csv", encoding = "UTF-8")
+
+```
+
+- Verifcando os tipos de dados das duas bases.
+
+
+```{r}
+glimpse(details_data)
+
+```
+
+```{r}
+glimpse(price_data)
+```
+
+- Verificando a quantidade de bairros únicos dentro da base.
+
+
+```{r}
+unique(details_data$suburb)
+```
+
+### Questões
+
+- Questão 1: Ordene os bairros em ordem crescente de número de listings.
+
+O bairro "Ingleses" é o que apresenta maior número de listings.
+
+
+```{r}
+by_location <- details_data %>% group_by(suburb) %>% summarise(counts = n())
+
+by_location
+
+```
+
+```{r}
+by_location %>%
+  mutate(name = fct_reorder(suburb, desc(counts))) %>%
+  ggplot(aes(x = name, y = counts)) + 
+    geom_bar(stat = "identity")
+```
+
+- Questão 2: Ordene os bairros em ordem crescente de faturamento médio dos listings.
+
+Como o faturamento e o bairro estão em datasets distintos, realizei um left_join para trazer a informação do faturamento baseado na coluna airbnb_listing_id.
+
+
+```{r}
+with_suburb <- left_join(details_data, price_data, by = "airbnb_listing_id")
+
+with_suburb$price_string <- as.integer(with_suburb$price_string)
+```
+
+
+Com os dados de faturamento é possível responder a questão. Jurerê apesar de não ter muitos listings, é o que apresenta maior média de faturamento.
+
+
+```{r}
+by_mean <- with_suburb %>% group_by(suburb) %>% summarise(means = mean(price_string, na.rm = T))
+
+by_mean
+```
+
+```{r}
+by_mean %>%
+  mutate(name = fct_reorder(suburb, desc(means))) %>%
+  ggplot(aes(x = name, y = means)) +
+    geom_bar(stat = "identity")
+```
+
+- Questão 3: Existem correlações entre as características de um anúncio e seu faturamento?
+
+Antes de calcular a correlação, foi removido as linhas com valores NA, até para testar outras correlações.
+
+
+```{r}
+with_suburb_without_na <- with_suburb[rowSums(is.na(with_suburb)) == 0,]
+```
+
+De acordo com o resultado, a correlação entre Faturamento e Avaliação é muito baixa. Bem próxima de zero.
+
+```{r}
+cor(with_suburb_without_na$price_string, with_suburb_without_na$star_rating)
+
+```
+Graficamente também não existe nenhum padrão entre estas duas variáveis.
+
+```{r}
+ggplot(with_suburb_without_na) +
+  aes(x = star_rating, y = price_string) +
+  geom_point(colour = "#0c4c8a") +
+  theme_minimal()
+```
+
+Porém quando verificamos todas as colunas numéricas, percebemos que existe uma correlação considerável entre número de quartos/banheiros com o preço.
+
+```{r}
+corrplot(cor(select_if(with_suburb_without_na, is.numeric)),
+         method = "number",
+         type = "upper")
+```
+
+
+- Questão 4: Qual a antecedência média das reservas?
+
+Para esta questão primeiro é necessário transformas a coluna booked_on em date (pois a mesma originalmente é uma string). Posteriormente é criada uma nova coluna com a diferença de dias entre as colunas date e booked_on para verificar a quantidade de dias que antecedem o aluguel.
+
+Assim é possível verificar que a média de antecedência é 1 mês.
+
+
+```{r}
+with_suburb_without_na$booked_on <- as.Date(with_suburb_without_na$booked_on)
+
+with_suburb_without_na <- mutate(with_suburb_without_na,
+                                 days_diff = difftime(date, booked_on, units = "days"))
+
+with_suburb_without_na$days_diff <- as.integer(with_suburb_without_na$days_diff)
+
+mean(with_suburb_without_na$days_diff, na.rm = T)
+```
+
+Para fazer a verificação para os finais de semana, criou-se uma coluna que identifica o dia da semana, começando na Seg = 1 e indo até o Dom = 7.
+
+Considerei como finais de semana Sab e Dom (6 e 7).
+
+Assim é possível verificar que não existem tanta diferença nas médias de antecedência:
+
+Para finais de semana
+
+
+```{r}
+is_weekend <- mutate(with_suburb_without_na,
+                                 wd = lubridate::wday(date, week_start = 1)) %>% filter(wd == 6 | wd == 7)
+
+mean(is_weekend$days_diff, na.rm = T)
+```
+
+Para dias da semana.
+
+```{r}
+is_not_weekend <- mutate(with_suburb_without_na,
+                                 wd = lubridate::wday(date, week_start = 1)) %>% filter(wd != 6 & wd != 7)
+
+mean(is_not_weekend$days_diff, na.rm = T)
+
+```
+
+
+
+
+
+
+
+
+
+
+
