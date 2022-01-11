@@ -3,8 +3,8 @@ title: "Seazone Code Challenge"
 author: "Tarcizio Barbosa"
 date: "11/01/2022"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ### Load Packages
@@ -155,7 +155,8 @@ Para finais de semana
 
 ```{r}
 is_weekend <- mutate(with_suburb_without_na,
-                                 wd = lubridate::wday(date, week_start = 1)) %>% filter(wd == 6 | wd == 7)
+                    wd = lubridate::wday(date, week_start = 1)) %>%
+                    filter(wd == 6 | wd == 7)
 
 mean(is_weekend$days_diff, na.rm = T)
 ```
@@ -164,7 +165,8 @@ Para dias da semana.
 
 ```{r}
 is_not_weekend <- mutate(with_suburb_without_na,
-                                 wd = lubridate::wday(date, week_start = 1)) %>% filter(wd != 6 & wd != 7)
+                        wd = lubridate::wday(date, week_start = 1)) %>%
+                        filter(wd != 6 & wd != 7)
 
 mean(is_not_weekend$days_diff, na.rm = T)
 
